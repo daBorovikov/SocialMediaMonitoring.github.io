@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>О проекте</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Навигация -->
@@ -312,7 +313,118 @@
             <h4 class="text-lg font-semibold mb-2">13. Диаграмма развертывания</h4>
             <p class="mb-4">Диаграмма развертывания показывает физическую архитектуру системы, включая серверы, базы данных и клиентские устройства, а также их взаимодействие.</p>
             <img src="image/13. Диаграмма Развёртывания.png" alt="Диаграмма развертывания" class="my-4 rounded-lg w-full">
+
+            <h3 class="text-xl font-semibold mb-2">Визуализация данных проекта</h3>
+            <p class="mb-4">Для лучшего понимания целевой аудитории, востребованности функций и прогресса разработки проекта ниже представлены графики.</p>
+
+            <h4 class="text-lg font-semibold mb-2">Распределение целевой аудитории</h4>
+            <p class="mb-4">Круговая диаграмма показывает условное распределение целевой аудитории системы, включая маркетологов, социологов, политологов, граждан и организации, а также инвесторов.</p>
+            <canvas id="audienceChart" class="my-4 max-w-[600px] max-h-[400px] mx-auto"></canvas>
+
+            <h4 class="text-lg font-semibold mb-2">Востребованность функций системы</h4>
+            <p class="mb-4">Столбчатая диаграмма иллюстрирует уровень востребованности ключевых функций системы среди целевой аудитории, таких как сбор данных, анализ тональности и генерация отчетов.</p>
+            <canvas id="featuresChart" class="my-4 max-w-full"></canvas>
+
+            <h4 class="text-lg font-semibold mb-2">Прогресс выполнения проекта</h4>
+            <p class="mb-4">Линейный график отображает прогресс выполнения проекта по этапам (анализ, разработка, тестирование, внедрение) в период с апреля по сентябрь 2025 года.</p>
+            <canvas id="progressChart" class="my-4 max-w-full"></canvas>
+
+            <h2 class="text-2xl font-semibold mb-4">Заключение</h2>
+            <p>ИАС СМО предоставляет мощный инструмент для анализа общественного мнения, сочетая современные технологии NLP, удобный интерфейс и доступность для локального рынка. Система позволяет минимизировать затраты на ручной анализ и оперативно реагировать на изменения, что делает её конкурентоспособной альтернативой таким решениям, как Brandwatch.</p>
         </div>
     </div>
+
+    <script>
+        // Круговая диаграмма целевой аудитории
+        new Chart(document.getElementById('audienceChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Маркетологи', 'Социологи', 'Политологи', 'Граждане и организации', 'Инвесторы'],
+                datasets: [{
+                    label: 'Целевая аудитория',
+                    data: [20, 20, 20, 20, 20],
+                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#1F2937' } },
+                    title: { display: true, text: 'Распределение целевой аудитории', color: '#1F2937', font: { size: 16 } }
+                }
+            }
+        });
+
+        // Столбчатая диаграмма востребованности функций
+        new Chart(document.getElementById('featuresChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Сбор данных', 'Анализ тональности', 'Выявление тем', 'Тепловые карты', 'Генерация отчетов', 'Доступ к данным', 'Уведомления'],
+                datasets: [{
+                    label: 'Востребованность (1-10)',
+                    data: [9, 8, 7, 7, 6, 6, 8],
+                    backgroundColor: '#3B82F6',
+                    borderColor: '#1F2937',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: { display: true, text: 'Уровень востребованности', color: '#1F2937' },
+                        ticks: { color: '#1F2937' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Функции системы', color: '#1F2937' },
+                        ticks: { color: '#1F2937' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Востребованность функций системы', color: '#1F2937', font: { size: 16 } }
+                }
+            }
+        });
+
+        // Линейный график прогресса выполнения
+        new Chart(document.getElementById('progressChart'), {
+            type: 'line',
+            data: {
+                labels: ['1 апр', '15 апр', '15 июл', '31 авг', '30 сен'],
+                datasets: [{
+                    label: 'Прогресс выполнения (%)',
+                    data: [0, 25, 75, 90, 100],
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Прогресс (%)', color: '#1F2937' },
+                        ticks: { color: '#1F2937' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Даты (2025)', color: '#1F2937' },
+                        ticks: { color: '#1F2937' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#1F2937' } },
+                    title: { display: true, text: 'Прогресс выполнения проекта', color: '#1F2937', font: { size: 16 } }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
