@@ -58,7 +58,7 @@
         async function loadUsersData() {
             try {
                 // Замените на путь к вашему users.json в репозитории
-                const repoUrl = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME/main/users.json';
+                const repoUrl = 'https://github.com/daBorovikov/SocialMediaMonitoring.github.io/blob/main/users.json';
                 const response = await fetch(repoUrl);
                 if (!response.ok) {
                     throw new Error('Не удалось загрузить данные пользователей');

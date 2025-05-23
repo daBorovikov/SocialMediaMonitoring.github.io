@@ -143,10 +143,10 @@
             // Сохранение данных пользователя в users.json на GitHub
             try {
                 // Замените на ваши данные
-                const owner = 'YOUR_GITHUB_USERNAME'; // Ваш GitHub username
-                const repo = 'YOUR_REPOSITORY_NAME'; // Название вашего репозитория
+                const owner = 'daBorovikov'; // Ваш GitHub username
+                const repo = 'SocialMediaMonitoring.github.io'; // Название вашего репозитория
                 const path = 'users.json'; // Путь к файлу в репозитории
-                const token = 'YOUR_PERSONAL_ACCESS_TOKEN'; // Ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА, замените на прокси в продакшене)
+                const token = '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'; // Ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА, замените на прокси в продакшене)
 
                 // Получение текущего содержимого users.json
                 const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
