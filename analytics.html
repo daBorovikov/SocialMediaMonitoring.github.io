@@ -6,6 +6,9 @@
     <title>Анализ данных</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Навигация -->
@@ -26,7 +29,7 @@
         <h1 class="text-3xl font-bold text-center mb-6">Анализ данных</h1>
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
-            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол. Для подробной аналитики посетите <a href="https://analytics.google.com" target="_blank" class="text-blue-600 hover:underline">Google Analytics</a>.</p>
+            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
             <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
                 <thead>
                     <tr class="bg-gray-200">
@@ -45,6 +48,19 @@
     </div>
 
     <script>
+        // Инициализация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0CMFEqlToCg01h1JgExwADZVQn7tKpOU",
+            authDomain: "socialmediamonitoring1242.firebaseapp.com",
+            databaseURL: "https://socialmediamonitoring1242-default-rtdb.firebaseio.com",
+            projectId: "socialmediamonitoring1242",
+            storageBucket: "socialmediamonitoring1242.firebasestorage.app",
+            messagingSenderId: "1073391087156",
+            appId: "1:1073391087156:web:1c85d22fb2262ab4042461"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('isAuthenticated') !== 'true') {
@@ -54,11 +70,19 @@
             }
         });
 
-        // Загрузка данных из localStorage
+        // Загрузка данных из Firebase
         function loadUsersData() {
-            let users = JSON.parse(localStorage.getItem('users')) || [];
-            renderUserTable(users);
-            renderGenderChart(users);
+            database.ref('users').once('value').then((snapshot) => {
+                const users = [];
+                snapshot.forEach((childSnapshot) => {
+                    users.push(childSnapshot.val());
+                });
+                renderUserTable(users);
+                renderGenderChart(users);
+            }).catch((error) => {
+                console.error('Ошибка загрузки данных из Firebase:', error);
+                alert('Ошибка при загрузке данных: ' + error.message);
+            });
         }
 
         // Функция для отображения таблицы пользователей

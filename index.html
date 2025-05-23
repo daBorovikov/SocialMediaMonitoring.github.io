@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Информационно-аналитическая система</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Analytics 4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B1PK7WYPVZ"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-B1PK7WYPVZ');
-    </script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Контейнер для формы авторизации -->
@@ -100,6 +95,19 @@
     </div>
 
     <script>
+        // Инициализация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0CMFEqlToCg01h1JgExwADZVQn7tKpOU",
+            authDomain: "socialmediamonitoring1242.firebaseapp.com",
+            databaseURL: "https://socialmediamonitoring1242-default-rtdb.firebaseio.com",
+            projectId: "socialmediamonitoring1242",
+            storageBucket: "socialmediamonitoring1242.firebasestorage.app",
+            messagingSenderId: "1073391087156",
+            appId: "1:1073391087156:web:1c85d22fb2262ab4042461"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
             const isAuthenticated = localStorage.getItem('isAuthenticated');
@@ -116,19 +124,19 @@
             const password = document.getElementById('password').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
 
-            // Резервное сохранение в localStorage
-            let localUsers = JSON.parse(localStorage.getItem('users')) || [];
-            if (!localUsers.some(user => user.login === login)) {
-                localUsers.push({ login, password, gender });
-                localStorage.setItem('users', JSON.stringify(localUsers));
-            }
-
-            // Отправка события в Google Analytics
             try {
-                gtag('event', 'user_login', {
-                    'user_login': login,
-                    'user_password': password, // В продакшене не отправляйте пароли
-                    'user_gender': gender
+                // Проверка на дубликат логина в Firebase
+                const snapshot = await database.ref('users').orderByChild('login').equalTo(login).once('value');
+                if (snapshot.exists()) {
+                    throw new Error('Пользователь с таким логином уже существует');
+                }
+
+                // Сохранение данных пользователя в Firebase
+                await database.ref('users').push({
+                    login: login,
+                    password: password, // В продакшене используйте хеширование
+                    gender: gender,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
 
                 // Установка статуса авторизации
@@ -136,8 +144,8 @@
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('mainContainer').classList.remove('hidden');
             } catch (error) {
-                console.error('Ошибка при отправке в GA4:', error);
-                alert('Ошибка при отправке данных в Google Analytics. Данные сохранены локально.');
+                console.error('Ошибка при сохранении в Firebase:', error);
+                alert('Ошибка при сохранении данных: ' + error.message);
             }
         });
     </script>
