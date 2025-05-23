@@ -6,9 +6,6 @@
     <title>Анализ данных</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Навигация -->
@@ -47,8 +44,12 @@
         </div>
     </div>
 
-    <script>
-        // Инициализация Firebase
+    <script type="module">
+        // Импорт Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.mjs';
+
+        // Конфигурация Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyD0CMFEqlToCg01h1JgExwADZVQn7tKpOU",
             authDomain: "socialmediamonitoring1242.firebaseapp.com",
@@ -58,8 +59,10 @@
             messagingSenderId: "1073391087156",
             appId: "1:1073391087156:web:1c85d22fb2262ab4042461"
         };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
@@ -71,18 +74,22 @@
         });
 
         // Загрузка данных из Firebase
-        function loadUsersData() {
-            database.ref('users').once('value').then((snapshot) => {
+        async function loadUsersData() {
+            try {
+                const usersRef = ref(database, 'users');
+                const snapshot = await get(usersRef);
                 const users = [];
-                snapshot.forEach((childSnapshot) => {
-                    users.push(childSnapshot.val());
-                });
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnapshot) => {
+                        users.push(childSnapshot.val());
+                    });
+                }
                 renderUserTable(users);
                 renderGenderChart(users);
-            }).catch((error) => {
+            } catch (error) {
                 console.error('Ошибка загрузки данных из Firebase:', error);
                 alert('Ошибка при загрузке данных: ' + error.message);
-            });
+            }
         }
 
         // Функция для отображения таблицы пользователей

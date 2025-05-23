@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Информационно-аналитическая система</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Контейнер для формы авторизации -->
@@ -94,8 +91,12 @@
         </div>
     </div>
 
-    <script>
-        // Инициализация Firebase
+    <script type="module">
+        // Импорт Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getDatabase, ref, push, orderByChild, query, equalTo, get } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.mjs';
+
+        // Конфигурация Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyD0CMFEqlToCg01h1JgExwADZVQn7tKpOU",
             authDomain: "socialmediamonitoring1242.firebaseapp.com",
@@ -105,8 +106,10 @@
             messagingSenderId: "1073391087156",
             appId: "1:1073391087156:web:1c85d22fb2262ab4042461"
         };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
@@ -125,18 +128,21 @@
             const gender = document.querySelector('input[name="gender"]:checked').value;
 
             try {
-                // Проверка на дубликат логина в Firebase
-                const snapshot = await database.ref('users').orderByChild('login').equalTo(login).once('value');
+                // Проверка на дубликат логина
+                const usersRef = ref(database, 'users');
+                const loginQuery = query(usersRef, orderByChild('login'), equalTo(login));
+                const snapshot = await get(loginQuery);
+
                 if (snapshot.exists()) {
                     throw new Error('Пользователь с таким логином уже существует');
                 }
 
-                // Сохранение данных пользователя в Firebase
-                await database.ref('users').push({
+                // Сохранение данных в Firebase
+                await push(usersRef, {
                     login: login,
-                    password: password, // В продакшене используйте хеширование
+                    password: password, // В продакшене хешировать
                     gender: gender,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                    timestamp: Date.now()
                 });
 
                 // Установка статуса авторизации
