@@ -57,13 +57,20 @@
         // Загрузка данных из users.json
         async function loadUsersData() {
             try {
-                // Замените на путь к вашему users.json в репозитории
-                const repoUrl = 'https://github.com/daBorovikov/SocialMediaMonitoring.github.io/blob/main/users.json';
-                const response = await fetch(repoUrl);
+                const repoUrl = 'https://raw.githubusercontent.com/daborovikov/daborovikov.github.io/main/users.json';
+                const response = await fetch(repoUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'daborovikov.github.io'
+                    }
+                });
                 if (!response.ok) {
-                    throw new Error('Не удалось загрузить данные пользователей');
+                    throw new Error(`Не удалось загрузить users.json: ${response.status} ${response.statusText}`);
                 }
                 const users = await response.json();
+                if (!Array.isArray(users)) {
+                    throw new Error('Некорректный формат данных в users.json: ожидается массив');
+                }
                 renderUserTable(users);
                 renderGenderChart(users);
             } catch (error) {

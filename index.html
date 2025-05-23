@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Информационно-аналитическая система</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Контейнер для формы авторизации -->
@@ -92,38 +91,7 @@
         </div>
     </div>
 
-    <script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-            return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-                try {
-                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                    var firstSheetName = workbook.SheetNames[0];
-                    var worksheet = workbook.Sheets[firstSheetName];
-                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    var filteredData = jsonData.filter(row => row.some(filledCell));
-                    var headerRowIndex = filteredData.findIndex((row, index) =>
-                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                    );
-                    if (headerRowIndex === -1 || headerRowIndex > 25) {
-                        headerRowIndex = 0;
-                    }
-                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                    return csv;
-                } catch (e) {
-                    console.error(e);
-                    return "";
-                }
-            }
-            return gk_fileData[filename] || "";
-        }
-
+    <script>
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
             const isAuthenticated = localStorage.getItem('isAuthenticated');
@@ -142,26 +110,39 @@
 
             // Сохранение данных пользователя в users.json на GitHub
             try {
-                // Замените на ваши данные
-                const owner = 'daBorovikov'; // Ваш GitHub username
-                const repo = 'SocialMediaMonitoring.github.io'; // Название вашего репозитория
-                const path = 'users.json'; // Путь к файлу в репозитории
-                const token = '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'; // Ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА, замените на прокси в продакшене)
+                const owner = 'daborovikov';
+                const repo = 'daborovikov.github.io';
+                const path = 'users.json';
+                const token = 'YOUR_PERSONAL_ACCESS_TOKEN'; // Замените на ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА)
 
                 // Получение текущего содержимого users.json
                 const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'GET',
                     headers: {
                         'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'daborovikov.github.io'
                     }
                 });
 
                 if (!response.ok) {
-                    throw new Error('Не удалось загрузить users.json');
+                    const errorData = await response.json();
+                    throw new Error(`Не удалось загрузить users.json: ${response.status} ${errorData.message}`);
                 }
 
                 const fileData = await response.json();
-                const currentUsers = JSON.parse(atob(fileData.content)) || [];
+                let currentUsers = [];
+                try {
+                    currentUsers = JSON.parse(atob(fileData.content)) || [];
+                } catch (err) {
+                    throw new Error('Некорректный формат users.json: ' + err.message);
+                }
+
+                // Проверка, существует ли пользователь с таким логином
+                if (currentUsers.some(user => user.login === login)) {
+                    throw new Error('Пользователь с таким логином уже существует');
+                }
+
                 currentUsers.push({ login, password, gender });
 
                 // Обновление файла
@@ -171,7 +152,8 @@
                     headers: {
                         'Authorization': `token ${token}`,
                         'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'daborovikov.github.io'
                     },
                     body: JSON.stringify({
                         message: `Add user ${login}`,
@@ -181,7 +163,8 @@
                 });
 
                 if (!updateResponse.ok) {
-                    throw new Error('Не удалось обновить users.json');
+                    const errorData = await updateResponse.json();
+                    throw new Error(`Не удалось обновить users.json: ${updateResponse.status} ${errorData.message}`);
                 }
 
                 // Установка статуса авторизации
