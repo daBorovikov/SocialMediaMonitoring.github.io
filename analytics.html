@@ -26,7 +26,7 @@
         <h1 class="text-3xl font-bold text-center mb-6">Анализ данных</h1>
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
-            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
+            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол. Для подробной аналитики посетите <a href="https://analytics.google.com" target="_blank" class="text-blue-600 hover:underline">Google Analytics</a>.</p>
             <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
                 <thead>
                     <tr class="bg-gray-200">
@@ -46,37 +46,17 @@
 
     <script>
         // Проверка состояния авторизации
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('isAuthenticated') !== 'true') {
                 window.location.href = 'index.html';
             } else {
-                await loadUsersData();
+                loadUsersData();
             }
         });
 
-        // Загрузка данных из users.json с резервным использованием localStorage
-        async function loadUsersData() {
-            let users = [];
-            try {
-                const repoUrl = 'https://raw.githubusercontent.com/daBorovikov/SocialMediaMonitoring.github.io/main/users.json';
-                const response = await fetch(repoUrl, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'User-Agent': 'SocialMediaMonitoring'
-                    }
-                });
-                if (!response.ok) {
-                    throw new Error(`Не удалось загрузить users.json: ${response.status} ${response.statusText}`);
-                }
-                users = await response.json();
-                if (!Array.isArray(users)) {
-                    throw new Error('Некорректный формат данных в users.json: ожидается массив');
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки users.json:', error);
-                alert('Ошибка при загрузке данных из users.json: ' + error.message + '. Используются локальные данные.');
-                users = JSON.parse(localStorage.getItem('users')) || [];
-            }
+        // Загрузка данных из localStorage
+        function loadUsersData() {
+            let users = JSON.parse(localStorage.getItem('users')) || [];
             renderUserTable(users);
             renderGenderChart(users);
         }

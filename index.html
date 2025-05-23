@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Информационно-аналитическая система</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B1PK7WYPVZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-B1PK7WYPVZ');
+    </script>
 </head>
 <body class="bg-gray-100 font-sans">
     <!-- Контейнер для формы авторизации -->
@@ -108,72 +116,28 @@
             const password = document.getElementById('password').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
 
-            // Сохранение данных пользователя в users.json на GitHub
+            // Резервное сохранение в localStorage
+            let localUsers = JSON.parse(localStorage.getItem('users')) || [];
+            if (!localUsers.some(user => user.login === login)) {
+                localUsers.push({ login, password, gender });
+                localStorage.setItem('users', JSON.stringify(localUsers));
+            }
+
+            // Отправка события в Google Analytics
             try {
-                const owner = 'daBorovikov';
-                const repo = 'SocialMediaMonitoring.github.io'
-                const path = 'users.json';
-                const token = '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'; // Замените на ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА)
-
-                // Получение текущего содержимого users.json
-                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'SocialMediaMonitoring.github.io'
-                    }
+                gtag('event', 'user_login', {
+                    'user_login': login,
+                    'user_password': password, // В продакшене не отправляйте пароли
+                    'user_gender': gender
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Не удалось загрузить users.json: ${response.status} ${errorData.message}`);
-                }
-
-                const fileData = await response.json();
-                let currentUsers = [];
-                try {
-                    currentUsers = JSON.parse(atob(fileData.content)) || [];
-                } catch (err) {
-                    throw new Error('Некорректный формат users.json: ' + err.message);
-                }
-
-                // Проверка, существует ли пользователь с таким логином
-                if (currentUsers.some(user => user.login === login)) {
-                    throw new Error('Пользователь с таким логином уже существует');
-                }
-
-                currentUsers.push({ login, password, gender });
-
-                // Обновление файла
-                const updatedContent = btoa(JSON.stringify(currentUsers, null, 2));
-                const updateResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json',
-                        'User-Agent': 'SocialMediaMonitoring.github.io'
-                    },
-                    body: JSON.stringify({
-                        message: `Add user ${login}`,
-                        content: updatedContent,
-                        sha: fileData.sha
-                    })
-                });
-
-                if (!updateResponse.ok) {
-                    const errorData = await updateResponse.json();
-                    throw new Error(`Не удалось обновить users.json: ${updateResponse.status} ${errorData.message}`);
-                }
 
                 // Установка статуса авторизации
                 localStorage.setItem('isAuthenticated', 'true');
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('mainContainer').classList.remove('hidden');
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка при сохранении данных: ' + error.message);
+                console.error('Ошибка при отправке в GA4:', error);
+                alert('Ошибка при отправке данных в Google Analytics. Данные сохранены локально.');
             }
         });
     </script>
