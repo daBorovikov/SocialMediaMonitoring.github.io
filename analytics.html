@@ -54,29 +54,31 @@
             }
         });
 
-        // Загрузка данных из users.json
+        // Загрузка данных из users.json с резервным использованием localStorage
         async function loadUsersData() {
+            let users = [];
             try {
-                const repoUrl = 'https://raw.githubusercontent.com/daborovikov/daborovikov.github.io/main/users.json';
+                const repoUrl = 'https://raw.githubusercontent.com/daBorovikov/SocialMediaMonitoring.github.io/main/users.json';
                 const response = await fetch(repoUrl, {
                     headers: {
                         'Accept': 'application/json',
-                        'User-Agent': 'daborovikov.github.io'
+                        'User-Agent': 'SocialMediaMonitoring'
                     }
                 });
                 if (!response.ok) {
                     throw new Error(`Не удалось загрузить users.json: ${response.status} ${response.statusText}`);
                 }
-                const users = await response.json();
+                users = await response.json();
                 if (!Array.isArray(users)) {
                     throw new Error('Некорректный формат данных в users.json: ожидается массив');
                 }
-                renderUserTable(users);
-                renderGenderChart(users);
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Ошибка при загрузке данных: ' + error.message);
+                console.error('Ошибка загрузки users.json:', error);
+                alert('Ошибка при загрузке данных из users.json: ' + error.message + '. Используются локальные данные.');
+                users = JSON.parse(localStorage.getItem('users')) || [];
             }
+            renderUserTable(users);
+            renderGenderChart(users);
         }
 
         // Функция для отображения таблицы пользователей
