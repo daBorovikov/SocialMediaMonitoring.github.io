@@ -1,0 +1,156 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ данных</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Навигация -->
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between">
+            <h1 class="text-xl font-bold">Система мониторинга</h1>
+            <div>
+                <a href="index.html" class="px-4 hover:underline">Главная</a>
+                <a href="about.html" class="px-4 hover:underline">О проекте</a>
+                <a href="downloads.html" class="px-4 hover:underline">Скачать</a>
+                <a href="analytics.html" class="px-4 hover:underline">Анализ данных</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Страница анализа данных -->
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-center mb-6">Анализ данных</h1>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
+            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
+            <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 p-2">Логин</th>
+                        <th class="border border-gray-300 p-2">Пароль</th>
+                        <th class="border border-gray-300 p-2">Пол</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+
+            <h2 class="text-2xl font-semibold mb-4">Распределение пользователей по полу</h2>
+            <p class="mb-4">Диаграмма показывает количество пользователей, перешедших на сайт, с разбивкой по полу.</p>
+            <canvas id="genderChart" class="my-4 max-w-[600px] max-h-[400px] mx-auto"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Проверка состояния авторизации
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            if (isAuthenticated !== 'true') {
+                window.location.href = 'index.html'; // Перенаправление на главную, если не авторизован
+            } else {
+                renderUserTable();
+                renderGenderChart();
+            }
+        });
+
+        // Функция для отображения таблицы пользователей
+        function renderUserTable() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${user.login}</td>
+                    <td class="border border-gray-300 p-2">${user.password}</td>
+                    <td class="border border-gray-300 p-2">${user.gender === 'male' ? 'Мужской' : 'Женский'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Функция для отображения диаграммы
+        function renderGenderChart() {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const genderCounts = {
+                male: users.filter(user => user.gender === 'male').length,
+                female: users.filter(user => user.gender === 'female').length
+            };
+
+            new Chart(document.getElementById('genderChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Мужской', 'Женский'],
+                    datasets: [{
+                        label: 'Количество пользователей',
+                        data: [genderCounts.male, genderCounts.female],
+                        backgroundColor: ['#3B82F6', '#EF4444'],
+                        borderColor: ['#1F2937', '#1F2937'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Количество', color: '#1F2937' },
+                            ticks: { color: '#1F2937', stepSize: 1 }
+                        },
+                        x: {
+                            title: { display: true, text: 'Пол', color: '#1F2937' },
+                            ticks: { color: '#1F2937' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Распределение пользователей по полу', color: '#1F2937', font: { size: 16 } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
