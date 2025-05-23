@@ -27,13 +27,6 @@
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
             <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
-            <div class="mb-4 flex gap-4">
-                <button id="exportBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Экспорт данных</button>
-                <label for="importInput" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer">
-                    Импорт данных
-                    <input type="file" id="importInput" accept=".json" class="hidden">
-                </label>
-            </div>
             <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
                 <thead>
                     <tr class="bg-gray-200">
@@ -53,18 +46,34 @@
 
     <script>
         // Проверка состояния авторизации
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             if (localStorage.getItem('isAuthenticated') !== 'true') {
                 window.location.href = 'index.html';
             } else {
-                renderUserTable();
-                renderGenderChart();
+                await loadUsersData();
             }
         });
 
+        // Загрузка данных из users.json
+        async function loadUsersData() {
+            try {
+                // Замените на путь к вашему users.json в репозитории
+                const repoUrl = 'https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME/main/users.json';
+                const response = await fetch(repoUrl);
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить данные пользователей');
+                }
+                const users = await response.json();
+                renderUserTable(users);
+                renderGenderChart(users);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при загрузке данных: ' + error.message);
+            }
+        }
+
         // Функция для отображения таблицы пользователей
-        function renderUserTable() {
-            const users = JSON.parse(localStorage.getItem('users')) || [];
+        function renderUserTable(users) {
             const tableBody = document.getElementById('userTableBody');
             tableBody.innerHTML = '';
             users.forEach(user => {
@@ -79,8 +88,7 @@
         }
 
         // Функция для отображения диаграммы
-        function renderGenderChart() {
-            const users = JSON.parse(localStorage.getItem('users')) || [];
+        function renderGenderChart(users) {
             const genderCounts = {
                 male: users.filter(user => user.gender === 'male').length,
                 female: users.filter(user => user.gender === 'female').length
@@ -118,43 +126,6 @@
                 }
             });
         }
-
-        // Экспорт данных
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            const users = JSON.parse(localStorage.getItem('users')) || [];
-            const json = JSON.stringify(users, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'users_data.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-
-        // Импорт данных
-        document.getElementById('importInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importedUsers = JSON.parse(event.target.result);
-                        if (Array.isArray(importedUsers)) {
-                            localStorage.setItem('users', JSON.stringify(importedUsers));
-                            renderUserTable();
-                            renderGenderChart();
-                            alert('Данные успешно импортированы!');
-                        } else {
-                            alert('Неверный формат файла. Ожидается JSON-массив.');
-                        }
-                    } catch (err) {
-                        alert('Ошибка при импорте данных: ' + err.message);
-                    }
-                };
-                reader.readAsText(file);
-            }
-        });
     </script>
 </body>
 </html>

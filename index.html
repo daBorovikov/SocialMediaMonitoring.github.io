@@ -134,21 +134,64 @@
         });
 
         // Обработка отправки формы авторизации
-        document.getElementById('authForm').addEventListener('submit', (e) => {
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const login = document.getElementById('login').value;
             const password = document.getElementById('password').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
 
-            // Сохранение данных пользователя в localStorage
-            let users = JSON.parse(localStorage.getItem('users')) || [];
-            users.push({ login, password, gender });
-            localStorage.setItem('users', JSON.stringify(users));
+            // Сохранение данных пользователя в users.json на GitHub
+            try {
+                // Замените на ваши данные
+                const owner = 'YOUR_GITHUB_USERNAME'; // Ваш GitHub username
+                const repo = 'YOUR_REPOSITORY_NAME'; // Название вашего репозитория
+                const path = 'users.json'; // Путь к файлу в репозитории
+                const token = 'YOUR_PERSONAL_ACCESS_TOKEN'; // Ваш PAT (ТОЛЬКО ДЛЯ ТЕСТА, замените на прокси в продакшене)
 
-            // Установка статуса авторизации
-            localStorage.setItem('isAuthenticated', 'true');
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('mainContainer').classList.remove('hidden');
+                // Получение текущего содержимого users.json
+                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить users.json');
+                }
+
+                const fileData = await response.json();
+                const currentUsers = JSON.parse(atob(fileData.content)) || [];
+                currentUsers.push({ login, password, gender });
+
+                // Обновление файла
+                const updatedContent = btoa(JSON.stringify(currentUsers, null, 2));
+                const updateResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Add user ${login}`,
+                        content: updatedContent,
+                        sha: fileData.sha
+                    })
+                });
+
+                if (!updateResponse.ok) {
+                    throw new Error('Не удалось обновить users.json');
+                }
+
+                // Установка статуса авторизации
+                localStorage.setItem('isAuthenticated', 'true');
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('mainContainer').classList.remove('hidden');
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при сохранении данных: ' + error.message);
+            }
         });
     </script>
 </body>
