@@ -336,6 +336,20 @@
     </div>
 
     <script>
+        // Проверка авторизации
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('isAuthenticated') !== 'true') {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Код Chart.js остается без изменений
+        new Chart(document.getElementById('audienceChart'), { /* ... */ });
+        new Chart(document.getElementById('featuresChart'), { /* ... */ });
+        new Chart(document.getElementById('progressChart'), { /* ... */ });
+    </script>
+
+    <script>
         // Круговая диаграмма целевой аудитории
         new Chart(document.getElementById('audienceChart'), {
             type: 'pie',
@@ -431,11 +445,6 @@
     </script>
 
 
-    <script>
-        // Код Chart.js остается без изменений
-        new Chart(document.getElementById('audienceChart'), { /* ... */ });
-        new Chart(document.getElementById('featuresChart'), { /* ... */ });
-        new Chart(document.getElementById('progressChart'), { /* ... */ });
-    </script>
+   
 </body>
 </html>

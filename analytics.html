@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -66,6 +27,13 @@
         <div class="bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
             <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
+            <div class="mb-4 flex gap-4">
+                <button id="exportBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Экспорт данных</button>
+                <label for="importInput" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer">
+                    Импорт данных
+                    <input type="file" id="importInput" accept=".json" class="hidden">
+                </label>
+            </div>
             <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
                 <thead>
                     <tr class="bg-gray-200">
@@ -86,9 +54,8 @@
     <script>
         // Проверка состояния авторизации
         document.addEventListener('DOMContentLoaded', () => {
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            if (isAuthenticated !== 'true') {
-                window.location.href = 'index.html'; // Перенаправление на главную, если не авторизован
+            if (localStorage.getItem('isAuthenticated') !== 'true') {
+                window.location.href = 'index.html';
             } else {
                 renderUserTable();
                 renderGenderChart();
@@ -151,6 +118,43 @@
                 }
             });
         }
+
+        // Экспорт данных
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const json = JSON.stringify(users, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Импорт данных
+        document.getElementById('importInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedUsers = JSON.parse(event.target.result);
+                        if (Array.isArray(importedUsers)) {
+                            localStorage.setItem('users', JSON.stringify(importedUsers));
+                            renderUserTable();
+                            renderGenderChart();
+                            alert('Данные успешно импортированы!');
+                        } else {
+                            alert('Неверный формат файла. Ожидается JSON-массив.');
+                        }
+                    } catch (err) {
+                        alert('Ошибка при импорте данных: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
     </script>
 </body>
 </html>

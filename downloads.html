@@ -91,5 +91,15 @@
             </ul>
         </div>
     </div>
+
+    <script>
+        // Проверка авторизации
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('isAuthenticated') !== 'true') {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
 </body>
 </html>
