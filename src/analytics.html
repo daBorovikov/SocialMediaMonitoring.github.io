@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ данных</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between">
+            <h1 class="text-xl font-bold">Система мониторинга</h1>
+            <div>
+                <a href="/index.html" class="px-4 hover:underline">Главная</a>
+                <a href="/about.html" class="px-4 hover:underline">О проекте</a>
+                <a href="/downloads.html" class="px-4 hover:underline">Скачать</a>
+                <a href="/analytics.html" class="px-4 hover:underline">Анализ данных</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-center mb-6">Анализ данных</h1>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">База данных пользователей</h2>
+            <p class="mb-4">Таблица ниже показывает информацию о пользователях, зарегистрированных в системе, включая логин, пароль и пол.</p>
+            <table id="userTable" class="w-full border-collapse border border-gray-300 mb-6">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 p-2">Логин</th>
+                        <th class="border border-gray-300 p-2">Пароль</th>
+                        <th class="border border-gray-300 p-2">Пол</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody"></tbody>
+            </table>
+
+            <h2 class="text-2xl font-semibold mb-4">Распределение пользователей по полу</h2>
+            <p class="mb-4">Диаграмма показывает количество пользователей, перешедших на сайт, с разбивкой по полу.</p>
+            <canvas id="genderChart" class="my-4 max-w-[600px] max-h-[400px] mx-auto"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('isAuthenticated') !== 'true') {
+                window.location.href = '/index.html';
+            } else {
+                loadUsersData();
+            }
+        });
+
+        async function loadUsersData() {
+            try {
+                const response = await fetch('/api/users');
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки данных');
+                }
+                const users = await response.json();
+                renderUserTable(users);
+                renderGenderChart(users);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при загрузке данных: ' + error.message);
+            }
+        }
+
+        function renderUserTable(users) {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${user.login}</td>
+                    <td class="border border-gray-300 p-2">${user.password}</td>
+                    <td class="border border-gray-300 p-2">${user.gender === 'male' ? 'Мужской' : 'Женский'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderGenderChart(users) {
+            const genderCounts = {
+                male: users.filter(user => user.gender === 'male').length,
+                female: users.filter(user => user.gender === 'female').length
+            };
+
+            new Chart(document.getElementById('genderChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Мужской', 'Женский'],
+                    datasets: [{
+                        label: 'Количество пользователей',
+                        data: [genderCounts.male, genderCounts.female],
+                        backgroundColor: ['#3B82F6', '#EF4444'],
+                        borderColor: ['#1F2937', '#1F2937'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Количество', color: '#1F2937' },
+                            ticks: { color: '#1F2937', stepSize: 1 }
+                        },
+                        x: {
+                            title: { display: true, text: 'Пол', color: '#1F2937' },
+                            ticks: { color: '#1F2937' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Распределение пользователей по полу', color: '#1F2937', font: { size: 16 } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
