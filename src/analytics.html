@@ -9,13 +9,14 @@
 </head>
 <body class="bg-gray-100 font-sans">
     <nav class="bg-blue-600 text-white p-4">
-        <div class="container mx-auto flex justify-between">
+        <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold">Система мониторинга</h1>
-            <div>
+            <div class="flex gap-4">
                 <a href="/index.html" class="px-4 hover:underline">Главная</a>
                 <a href="/about.html" class="px-4 hover:underline">О проекте</a>
                 <a href="/downloads.html" class="px-4 hover:underline">Скачать</a>
                 <a href="/analytics.html" class="px-4 hover:underline">Анализ данных</a>
+                <button id="logoutButton" class="px-4 py-1 bg-red-600 rounded-lg hover:bg-red-700">Выйти</button>
             </div>
         </div>
     </nav>
@@ -39,6 +40,17 @@
             <h2 class="text-2xl font-semibold mb-4">Распределение пользователей по полу</h2>
             <p class="mb-4">Диаграмма показывает количество пользователей, перешедших на сайт, с разбивкой по полу.</p>
             <canvas id="genderChart" class="my-4 max-w-[600px] max-h-[400px] mx-auto"></canvas>
+
+            <h2 class="text-2xl font-semibold mb-4 mt-8">Генерация изображений</h2>
+            <p class="mb-4">Введите текстовое описание для генерации изображения с помощью Kandinsky 3.1.</p>
+            <div class="mb-4">
+                <input id="imagePrompt" type="text" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Например: Пушистый кот в очках" maxlength="1000" required>
+            </div>
+            <button id="generateImageButton" class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 mb-4">Сгенерировать изображение</button>
+            <div id="imageResult" class="mt-4 flex justify-center">
+                <img id="generatedImage" class="max-w-full h-auto hidden" alt="Сгенерированное изображение">
+            </div>
+            <div id="imageError" class="text-red-600 hidden"></div>
         </div>
     </div>
 
@@ -49,6 +61,54 @@
             } else {
                 loadUsersData();
             }
+
+            // Обработчик для кнопки "Выйти"
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', () => {
+                    localStorage.removeItem('isAuthenticated');
+                    window.location.href = '/index.html';
+                });
+            }
+
+            // Обработчик для генерации изображения
+            document.getElementById('generateImageButton').addEventListener('click', async () => {
+                const prompt = document.getElementById('imagePrompt').value.trim();
+                const imageResult = document.getElementById('imageResult');
+                const generatedImage = document.getElementById('generatedImage');
+                const errorDiv = document.getElementById('imageError');
+                const button = document.getElementById('generateImageButton');
+
+                if (!prompt) {
+                    errorDiv.textContent = 'Введите текстовое описание';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                errorDiv.classList.add('hidden');
+                generatedImage.classList.add('hidden');
+                button.disabled = true;
+                button.textContent = 'Генерация...';
+
+                try {
+                    const response = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    generatedImage.src = `data:image/png;base64,${data.image}`;
+                    generatedImage.classList.remove('hidden');
+                } catch (error) {
+                    errorDiv.textContent = `Ошибка: ${error.message}`;
+                    errorDiv.classList.remove('hidden');
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Сгенерировать изображение';
+                }
+            });
         });
 
         async function loadUsersData() {

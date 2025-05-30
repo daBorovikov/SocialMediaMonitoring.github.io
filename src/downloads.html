@@ -16,6 +16,7 @@
                 <a href="about.html" class="px-4 hover:underline">О проекте</a>
                 <a href="downloads.html" class="px-4 hover:underline">Скачать</a>
                 <a href="analytics.html" class="px-4 hover:underline">Анализ данных</a>
+                <button id="logoutButton" class="px-4 py-1 bg-red-600 rounded-lg hover:bg-red-700">Выйти</button>
             </div>
         </div>
     </nav>
@@ -97,6 +98,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('isAuthenticated') !== 'true') {
                 window.location.href = 'index.html';
+            }
+            // Обработчик для кнопки "Выйти"
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', () => {
+                    localStorage.removeItem('isAuthenticated');
+                    window.location.href = '/index.html';
+                });
             }
         });
     </script>
